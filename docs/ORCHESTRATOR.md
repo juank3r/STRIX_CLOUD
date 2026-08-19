@@ -32,3 +32,10 @@ Security notes
 - The orchestrator will call connector methods that may perform network operations.
 - Always run first in `--run` disabled (dry-run) mode to ensure expected behavior.
 - Use dedicated Service Principals with least privilege and store secrets in Key Vault.
+ 
+Secrets and Key Vault
+----------------------
+
+- The orchestrator can resolve secrets from Azure Key Vault or environment variables. Set the environment variable `AZURE_KEYVAULT_NAME` to enable Key Vault lookups.
+- In `agents.yaml` you may reference connector config values using the `secret:` prefix. Example: `subscription_id: "secret:subscription_id"`.
+- See the dedicated secrets guide: [docs/SECRETS.md](docs/SECRETS.md)
