@@ -1,0 +1,26 @@
+repositories:
+  - name: my-azure-acr
+    provider: azure
+    connector: azure_connector
+    connector_config:
+      subscription_id: <YOUR_SUBSCRIPTION_ID>
+    targets:
+      - type: acr
+        name: myregistry
+        resource_group: my-rg
+    tests:
+      - name: check_acr_images
+        description: "List images and run read-only metadata checks"
+
+  - name: my-aks-cluster
+    provider: azure
+    connector: azure_connector
+    connector_config:
+      subscription_id: <YOUR_SUBSCRIPTION_ID>
+    targets:
+      - type: aks
+        name: my-aks
+        resource_group: my-aks-rg
+    tests:
+      - name: check_nodes
+        description: "Collect node info and non-destructive checks"
