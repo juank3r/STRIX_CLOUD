@@ -22,6 +22,17 @@ def run_plan(plan_path: str, dry_run: bool = True):
         audit.audit('orchestrator.start_repo', {'repo': name, 'provider': provider})
 
         try:
+            # Allow orchestrator to resolve secrets for connector configs
+            # For example: subscription_id may be provided as an env var name
+            for k, v in list(config.items()):
+                if isinstance(v, str) and v.startswith("secret:"):
+                    secret_name = v.split("secret:", 1)[1]
+                    from agents.common import secrets as _secrets
+
+                    cfg_val = _secrets.get_secret(secret_name, env_fallback=secret_name)
+                    if cfg_val:
+                        config[k] = cfg_val
+
             conn = loader.load_connector(connector_name, config)
             audit.audit('connector.loaded', {'repo': name, 'connector': connector_name})
             if conn.validate_permissions():

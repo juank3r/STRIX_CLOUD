@@ -7,6 +7,7 @@ pattern for implementing a connector.
 from typing import Dict, Any
 from agents.cloud_gateway import CloudGateway, GatewayError
 from agents.common import audit
+from agents.common import secrets
 
 
 class Connector(CloudGateway):
@@ -27,8 +28,12 @@ class Connector(CloudGateway):
             audit.audit("connector.validate.failed", {"provider": "azure", "reason": "sdk_missing"})
             raise GatewayError("Azure SDK not available; install optional deps to use Azure connector")
         if "subscription_id" not in self.config:
-            audit.audit("connector.validate.failed", {"provider": "azure", "reason": "missing_subscription_id"})
-            raise GatewayError("Missing 'subscription_id' in connector config")
+            # Attempt to read subscription id from Key Vault or env
+            sub = secrets.get_secret("subscription_id", env_fallback="AZURE_SUBSCRIPTION_ID")
+            if not sub:
+                audit.audit("connector.validate.failed", {"provider": "azure", "reason": "missing_subscription_id"})
+                raise GatewayError("Missing 'subscription_id' in connector config")
+            self.config["subscription_id"] = sub
         audit.audit("connector.validate.succeeded", {"provider": "azure"})
         return True
 
