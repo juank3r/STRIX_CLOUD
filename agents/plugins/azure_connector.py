@@ -6,6 +6,7 @@ pattern for implementing a connector.
 """
 from typing import Dict, Any
 from agents.cloud_gateway import CloudGateway, GatewayError
+from agents.common import audit
 
 
 class Connector(CloudGateway):
@@ -21,26 +22,37 @@ class Connector(CloudGateway):
             self.ResourceManagementClient = None
 
     def validate_permissions(self) -> bool:
+        audit.audit("connector.validate", {"provider": "azure", "config_keys": list(self.config.keys())})
         if not self.ResourceManagementClient:
+            audit.audit("connector.validate.failed", {"provider": "azure", "reason": "sdk_missing"})
             raise GatewayError("Azure SDK not available; install optional deps to use Azure connector")
         if "subscription_id" not in self.config:
+            audit.audit("connector.validate.failed", {"provider": "azure", "reason": "missing_subscription_id"})
             raise GatewayError("Missing 'subscription_id' in connector config")
+        audit.audit("connector.validate.succeeded", {"provider": "azure"})
         return True
 
     def list_resources(self) -> Any:
+        audit.audit("connector.list", {"provider": "azure"})
         if not self.ResourceManagementClient:
+            audit.audit("connector.list.empty", {"provider": "azure", "reason": "sdk_missing"})
             return []
         cred = self.DefaultAzureCredential()
         client = self.ResourceManagementClient(cred, self.config.get("subscription_id"))
         # Return resource groups as a safe example
         groups = [g.name for g in client.resource_groups.list()]
+        audit.audit("connector.list.succeeded", {"provider": "azure", "count": len(groups)})
         return groups
 
     def run_safe_check(self, resource_id: str) -> Dict[str, Any]:
         # Example non-destructive check: get resource group details
+        audit.audit("connector.check", {"provider": "azure", "resource_id": resource_id})
         if not self.ResourceManagementClient:
+            audit.audit("connector.check.failed", {"provider": "azure", "resource_id": resource_id, "reason": "sdk_missing"})
             return {"error": "azure sdk not available"}
         cred = self.DefaultAzureCredential()
         client = self.ResourceManagementClient(cred, self.config.get("subscription_id"))
         rg = client.resource_groups.get(resource_id)
-        return {"name": rg.name, "location": rg.location}
+        result = {"name": rg.name, "location": rg.location}
+        audit.audit("connector.check.succeeded", {"provider": "azure", "resource_id": resource_id})
+        return result
