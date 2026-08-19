@@ -2,8 +2,12 @@ repositories:
   - name: my-azure-acr
     provider: azure
     connector: azure_connector
+    # You can provide the subscription id directly, or use Key Vault reference:
+    #   subscription_id: "secret:subscription_id"
+    # The orchestrator will try Key Vault first (if AZURE_KEYVAULT_NAME is set),
+    # then fall back to the environment variable `AZURE_SUBSCRIPTION_ID`.
     connector_config:
-      subscription_id: <YOUR_SUBSCRIPTION_ID>
+      subscription_id: "secret:subscription_id"
     targets:
       - type: acr
         name: myregistry
@@ -16,7 +20,7 @@ repositories:
     provider: azure
     connector: azure_connector
     connector_config:
-      subscription_id: <YOUR_SUBSCRIPTION_ID>
+      subscription_id: "secret:subscription_id"
     targets:
       - type: aks
         name: my-aks
