@@ -1,0 +1,32 @@
+name: CI (Key Vault)
+on: [push]
+jobs:
+  test-with-keyvault:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set AZURE_KEYVAULT_NAME
+        env:
+          AZURE_KEYVAULT_NAME: ${{ secrets.AZURE_KEYVAULT_NAME }}
+        run: echo "AZURE_KEYVAULT_NAME=${AZURE_KEYVAULT_NAME}"
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Fetch secrets from Key Vault
+        id: get-secrets
+        run: |
+          set -euo pipefail
+          SUB_ID=$(az keyvault secret show --vault-name "${{ secrets.AZURE_KEYVAULT_NAME }}" --name subscription_id --query value -o tsv)
+          echo "subscription_id=$SUB_ID" >> $GITHUB_OUTPUT
+
+      - name: Run orchestrator (dry-run)
+        env:
+          AZURE_KEYVAULT_NAME: ${{ secrets.AZURE_KEYVAULT_NAME }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          # Example: pass a plan that uses secret:subscription_id in connector_config
+          python agents/orchestrator.py examples/agents.yaml
