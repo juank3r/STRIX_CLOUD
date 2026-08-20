@@ -1,5 +1,3 @@
-import pytest
-
 from agents.plugins import loader
 
 
