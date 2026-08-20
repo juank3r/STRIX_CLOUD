@@ -1,0 +1,21 @@
+name: CI KeyVault Verify
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  verify-keyvault:
+    name: Verify Azure login + Key Vault secret
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Check Key Vault secret presence
+        run: |
+          az keyvault secret show --vault-name "${{ secrets.AZURE_KEYVAULT_NAME }}" --name subscription_id --query id -o tsv
