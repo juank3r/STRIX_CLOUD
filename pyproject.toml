@@ -1,3 +1,50 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "strix-cloud"
+version = "0.1.0"
+description = "STRIX_CLOUD — read-only CSPM connectors and findings engine for authorized cloud audits"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+aws = ["boto3>=1.26"]
+azure = [
+    "azure-identity>=1.13",
+    "azure-mgmt-resource>=23.0",
+    "azure-mgmt-storage>=21.0",
+    "azure-mgmt-network>=23.0",
+    "azure-keyvault-secrets>=4.7",
+]
+gcp = [
+    "google-cloud-storage>=2.10",
+    "google-cloud-compute>=1.14",
+]
+dev = [
+    "pytest>=7.0",
+    "flake8>=6.0",
+    "black>=23.0",
+    "isort>=5.12",
+    "build>=1.0",
+]
+
+[project.scripts]
+strix-cloud = "agents.orchestrator:main"
+
+[tool.setuptools.packages.find]
+include = ["agents*"]
+exclude = ["tests*", "tools*", "examples*", "docs*", "wiki*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
 [tool.black]
 line-length = 120
 target-version = ["py310", "py311"]

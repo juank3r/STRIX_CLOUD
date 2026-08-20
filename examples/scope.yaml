@@ -1,0 +1,15 @@
+# Authorization scope for STRIX_CLOUD runs.
+#
+# A run with `--run` MUST be covered by a scope file (`--scope`). Every repo in
+# the plan is authorized against the `allow` list below by its target account
+# id (account_id / subscription_id / project_id / project in connector_config).
+# If a target is not listed here, the whole run aborts before touching anything.
+
+authorized_by: "security-team@example.com"   # who signed off on this audit
+not_before: "2026-01-01T00:00:00Z"            # optional validity window (UTC)
+not_after: "2026-12-31T23:59:59Z"
+
+allow:
+  - "00000000-0000-0000-0000-000000000000"    # Azure subscription id
+  - "123456789012"                            # AWS account id
+  - "my-gcp-project"                           # GCP project id

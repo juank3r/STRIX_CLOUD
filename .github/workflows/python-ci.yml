@@ -1,18 +1,20 @@
-name: Python CI
+name: Package smoke test
 on: [push, pull_request]
 jobs:
-  test:
+  install:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
-      - name: Install deps
+          python-version: "3.11"
+      - name: Build and install the package
         run: |
-          python -m pip install --upgrade pip
-          if [ -f agents/python_agent/requirements.txt ]; then pip install -r agents/python_agent/requirements.txt; fi
-      - name: Run example
+          python -m pip install --upgrade pip build
+          python -m build
+          pip install dist/*.whl
+      - name: Verify console entry point and import
         run: |
-          python agents/python_agent/agent.py
+          strix-cloud --help
+          python -c "import agents, agents.orchestrator, agents.plugins.loader; print('import OK')"

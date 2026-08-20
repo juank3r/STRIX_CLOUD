@@ -12,18 +12,20 @@ checks against discovered resources.
 Quickstart
 ----------
 
+0. Install the package: `pip install -e .[azure]` (exposes the `strix-cloud` command).
 1. Ensure you have authenticated to Azure with `az login` (if using Azure connectors).
 2. Adjust `examples/agents.yaml` to list your repositories/targets.
-3. Dry-run the plan:
+3. Dry-run the plan (no authorization needed — lists resources only):
 
 ```bash
-python agents/orchestrator.py examples/agents.yaml
+strix-cloud examples/agents.yaml
 ```
 
-4. Execute checks (non-dry-run):
+4. Execute checks (non-dry-run). `--run` requires a `--scope` authorization file
+   (see `examples/scope.yaml`) listing the authorized target accounts:
 
 ```bash
-python agents/orchestrator.py examples/agents.yaml --run
+strix-cloud examples/agents.yaml --run --scope examples/scope.yaml
 ```
 
 Security notes
@@ -48,11 +50,12 @@ aggregate them into a findings report.
 
 ```bash
 # Run checks and emit reports; gate CI on HIGH-or-above failures.
-python agents/orchestrator.py examples/agents.yaml --run --security \
+strix-cloud examples/agents.yaml --run --scope examples/scope.yaml --security \
   --report findings.json --sarif findings.sarif --fail-on HIGH
 ```
 
 Flags:
+- `--scope PATH` — authorization file (required with `--run`); see `examples/scope.yaml`.
 
 - `--security` — run `run_security_checks()` on each connector and print a summary.
 - `--report PATH` — write findings as JSON.

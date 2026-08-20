@@ -61,7 +61,7 @@ the open rule exposes admin ports (SSH 22 / RDP 3389) or all ports, otherwise
 Via the orchestrator (see `docs/ORCHESTRATOR.md`):
 
 ```bash
-python agents/orchestrator.py examples/agents.yaml --run --security \
+strix-cloud examples/agents.yaml --run --scope examples/scope.yaml --security \
   --report findings.json --sarif findings.sarif --fail-on HIGH
 ```
 

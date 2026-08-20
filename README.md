@@ -32,11 +32,14 @@ cd STRIX_CLOUD
 git checkout cloud-pentest
 ```
 
-2. Ejecuta el agente de ejemplo (Python):
+2. Instala el paquete (editable) con los extras del proveedor que uses:
 
 ```bash
-python agents/python_agent/agent.py
+pip install -e .[dev]              # solo desarrollo/tests
+pip install -e .[dev,aws,azure,gcp]  # con los SDKs cloud para ejecutar checks
 ```
+
+Esto expone el comando de consola `strix-cloud`.
 
 3. Para añadir un conector cloud, mira `agents/cloud_gateway.py` y
    `agents/plugins/loader.py` para el patrón de implementación.
@@ -51,14 +54,18 @@ python agents/python_agent/agent.py
 ## Motor de hallazgos (CSPM)
 
 Los conectores ejecutan checks de seguridad **read-only** y reportan hallazgos
-neutrales por proveedor (mismos controles en AWS, Azure y GCP). Ejemplo:
+neutrales por proveedor (mismos controles en AWS, Azure y GCP). Ejecutar checks
+reales (`--run`) exige un fichero de **autorización** (`--scope`) que lista las
+cuentas objetivo permitidas; si un objetivo no está autorizado, la ejecución
+aborta antes de tocar nada. Ejemplo:
 
 ```bash
-python agents/orchestrator.py examples/agents.yaml --run --security \
+strix-cloud examples/agents.yaml --run --scope examples/scope.yaml --security \
   --report findings.json --sarif findings.sarif --fail-on HIGH
 ```
 
-Ver `docs/FINDINGS.md` para el catálogo de controles y el mapeo por proveedor.
+Ver `docs/FINDINGS.md` para el catálogo de controles y `examples/scope.yaml`
+para el formato del fichero de autorización.
 
 ## Roadmap inmediato
 
@@ -67,5 +74,8 @@ Ver `docs/FINDINGS.md` para el catálogo de controles y el mapeo por proveedor.
 - [x] Motor de hallazgos (`Finding`/`Report`) con export JSON y SARIF.
 - [x] Catálogo de controles neutral + checks de storage en los 3 proveedores.
 - [x] Dominio de red: ingress sin restricción (SG/NSG/firewall) en los 3.
-- [ ] Ampliar controles (IAM permisivo, cómputo público, cifrado de discos).
-- [ ] Endurecer CI (lint verde) y publicar SARIF en code scanning.
+- [x] **Fase 0**: paquete instalable (`strix-cloud`), CI sin `SKIP_TESTS`,
+      audit JSON a fichero y gating de autorización (`--scope`).
+- [ ] **Fase 1**: findings enriquecidos (OCSF-lite + MITRE ATT&CK), persistencia y baseline.
+- [ ] **Fase 2**: ampliar controles (IAM, cómputo público, cifrado, logging) + multi-región AWS.
+- [ ] **Fase 3-4**: capa de agente LLM (analista) y auto-remediación vía PR.

@@ -4,8 +4,10 @@ It loads connector instances via the plugin loader, validates permissions,
 lists resources, and (optionally) runs read-only CSPM-style security checks,
 aggregating results into a :class:`~agents.common.findings.Report`.
 
-Everything here is non-destructive. Always verify written authorization
-before pointing the orchestrator at real cloud accounts.
+Running actual checks (``--run``) requires an authorization scope file
+(``--scope``): every target account in the plan is authorized against it
+before any connector touches a cloud account. Everything here is
+non-destructive.
 """
 import argparse
 import sys
@@ -13,6 +15,12 @@ import sys
 import yaml
 
 from agents.common import audit
+from agents.common.authorization import (
+    AuthorizationError,
+    load_scope,
+    require_authorization,
+    target_id_from_config,
+)
 from agents.common.findings import Report, Severity
 from agents.plugins import loader
 
@@ -30,22 +38,38 @@ def _resolve_secrets(config: dict) -> dict:
     return config
 
 
-def run_plan(plan_path: str, dry_run: bool = True, security: bool = False) -> Report:
-    with open(plan_path, "r", encoding="utf-8") as f:
-        plan = yaml.safe_load(f)
-
-    report = Report()
-
+def _prepare_repos(plan: dict):
+    """Return [(name, provider, connector_name, resolved_config), ...]."""
+    prepared = []
     for repo in plan.get("repositories", []):
         name = repo.get("name")
         provider = repo.get("provider")
         connector_name = repo.get("connector", "azure_connector")
         config = repo.get("connector_config", {})
+        _resolve_secrets(config)
+        prepared.append((name, provider, connector_name, config))
+    return prepared
+
+
+def run_plan(plan_path: str, dry_run: bool = True, security: bool = False, scope_path: str = None) -> Report:
+    with open(plan_path, "r", encoding="utf-8") as f:
+        plan = yaml.safe_load(f)
+
+    report = Report()
+    prepared = _prepare_repos(plan)
+
+    # Authorization gate: only when we actually run checks. All-or-nothing —
+    # if any target is unauthorized we abort before touching anything.
+    if not dry_run:
+        if not scope_path:
+            raise AuthorizationError("a scope file is required to run (use --scope)")
+        scope = load_scope(scope_path)
+        for name, provider, connector_name, config in prepared:
+            require_authorization(scope, name, provider, target_id_from_config(config))
+
+    for name, provider, connector_name, config in prepared:
         audit.audit("orchestrator.start_repo", {"repo": name, "provider": provider})
-
         try:
-            _resolve_secrets(config)
-
             conn = loader.load_connector(connector_name, config)
             audit.audit("connector.loaded", {"repo": name, "connector": connector_name})
             if not conn.validate_permissions():
@@ -96,9 +120,10 @@ def _print_summary(report: Report) -> None:
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="strix-cloud")
     parser.add_argument("plan", help="Path to agents.yaml")
     parser.add_argument("--run", action="store_true", help="Execute checks (not dry-run)")
+    parser.add_argument("--scope", metavar="PATH", help="Authorization scope file (required with --run)")
     parser.add_argument("--security", action="store_true", help="Run read-only security (CSPM) checks")
     parser.add_argument("--report", metavar="PATH", help="Write findings JSON to PATH")
     parser.add_argument("--sarif", metavar="PATH", help="Write SARIF 2.1.0 to PATH")
@@ -109,7 +134,14 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
 
-    report = run_plan(args.plan, dry_run=not args.run, security=args.security)
+    if args.run and not args.scope:
+        parser.error("--scope is required with --run (authorized targets allowlist)")
+
+    try:
+        report = run_plan(args.plan, dry_run=not args.run, security=args.security, scope_path=args.scope)
+    except AuthorizationError as exc:
+        print(f"Authorization failed: {exc}", file=sys.stderr)
+        return 3
 
     if args.security:
         _print_summary(report)

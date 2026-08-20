@@ -5,33 +5,25 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: [3.10, 3.11]
+        python: ["3.10", "3.11"]
     steps:
       - uses: actions/checkout@v4
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: "${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}"
+          key: "${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}"
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-      - name: Install dev deps
+      - name: Install package (editable) with dev extras
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install -e .[dev]
       - name: Run linter
-        run: |
-          # Fail the job when flake8 finds style errors
-          flake8 .
+        run: flake8 .
       - name: Run tests
-        if: ${{ secrets.SKIP_TESTS != 'true' }}
-        run: |
-          pytest -q
-      - name: Skip tests notice
-        if: ${{ secrets.SKIP_TESTS == 'true' }}
-        run: |
-          echo "SKIP_TESTS is set to 'true' — tests skipped by request"
+        run: pytest -q
