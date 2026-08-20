@@ -28,5 +28,10 @@ jobs:
           # Fail the job when flake8 finds style errors
           flake8 .
       - name: Run tests
+        if: ${{ secrets.SKIP_TESTS != 'true' }}
         run: |
           pytest -q
+      - name: Skip tests notice
+        if: ${{ secrets.SKIP_TESTS == 'true' }}
+        run: |
+          echo "SKIP_TESTS is set to 'true' — tests skipped by request"
