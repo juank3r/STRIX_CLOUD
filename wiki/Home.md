@@ -2,6 +2,10 @@
 
 Bienvenido a la documentación de `STRIX_CLOUD` (fork para agentes de seguridad cloud). Aquí encontrarás guías, esquemas de arquitectura, políticas éticas y ejemplos de agentes.
 
+## Stack (en qué se basa)
+
+- [Créditos y stack open source](Credits) — LiteLLM, Caido, Nuclei, Playwright y Bubble Tea, y qué aporta cada uno.
+
 ## Diagramas (empieza por aquí)
 
 - [Arquitectura y dependencias](Architecture) — cómo encajan las piezas y qué depende de qué.
