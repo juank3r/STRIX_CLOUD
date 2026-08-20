@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" font-family="'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif" role="img" aria-label="Cómo funciona: plan, gate de autorización, conectores read-only, catálogo de controles y report; si no está autorizado, aborta">
+  <defs>
+    <marker id="g" markerWidth="12" markerHeight="12" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="r" markerWidth="12" markerHeight="12" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444"/>
+    </marker>
+  </defs>
+
+  <rect x="6" y="6" width="1188" height="348" rx="26" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- Plan -->
+  <rect x="40" y="90" width="168" height="120" rx="20" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="124" y="140" font-size="19" font-weight="700" fill="#0f172a" text-anchor="middle">Plan</text>
+  <text x="124" y="166" font-size="13" fill="#64748b" text-anchor="middle" font-family="'SFMono-Regular', Consolas, monospace">agents.yaml</text>
+
+  <line x1="208" y1="150" x2="270" y2="150" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#g)"/>
+
+  <!-- Gate -->
+  <rect x="278" y="80" width="168" height="140" rx="20" fill="#fff7ed" stroke="#f59e0b" stroke-width="2.5"/>
+  <text x="362" y="138" font-size="18" font-weight="700" fill="#92400e" text-anchor="middle">¿Autorizado?</text>
+  <text x="362" y="164" font-size="13" fill="#b45309" text-anchor="middle" font-family="'SFMono-Regular', Consolas, monospace">scope.yaml</text>
+
+  <line x1="446" y1="150" x2="508" y2="150" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#g)"/>
+  <text x="477" y="140" font-size="13" font-weight="700" fill="#16a34a" text-anchor="middle">sí</text>
+
+  <!-- Conectores -->
+  <rect x="516" y="90" width="168" height="120" rx="20" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="600" y="140" font-size="18" font-weight="700" fill="#0f172a" text-anchor="middle">Conectores</text>
+  <text x="600" y="166" font-size="13" fill="#64748b" text-anchor="middle" font-family="'SFMono-Regular', Consolas, monospace">describe · get · list</text>
+
+  <line x1="684" y1="150" x2="746" y2="150" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#g)"/>
+
+  <!-- Catálogo -->
+  <rect x="754" y="90" width="168" height="120" rx="20" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="838" y="140" font-size="18" font-weight="700" fill="#0f172a" text-anchor="middle">Catálogo</text>
+  <text x="838" y="166" font-size="13" fill="#64748b" text-anchor="middle">de controles</text>
+
+  <line x1="922" y1="150" x2="984" y2="150" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#g)"/>
+
+  <!-- Report -->
+  <rect x="992" y="90" width="168" height="120" rx="20" fill="#0e7c86" stroke="#0b5c64" stroke-width="2"/>
+  <text x="1076" y="138" font-size="19" font-weight="800" fill="#ffffff" text-anchor="middle">Report</text>
+  <text x="1076" y="164" font-size="13" fill="#c3e7ea" text-anchor="middle" font-family="'SFMono-Regular', Consolas, monospace">JSON · SARIF</text>
+
+  <!-- No path -->
+  <line x1="362" y1="220" x2="362" y2="256" stroke="#ef4444" stroke-width="2.5" marker-end="url(#r)"/>
+  <text x="382" y="242" font-size="13" font-weight="700" fill="#b91c1c">no</text>
+  <rect x="278" y="264" width="168" height="60" rx="16" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+  <text x="362" y="300" font-size="17" font-weight="700" fill="#991b1b" text-anchor="middle">Abortar</text>
+</svg>

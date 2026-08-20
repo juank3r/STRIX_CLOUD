@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 430" width="1180" height="430" font-family="'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif" role="img" aria-label="STRIX_CLOUD de un vistazo: escanea tus cuentas cloud en solo lectura y reporta hallazgos por severidad en JSON y SARIF">
+  <defs>
+    <marker id="ar" markerWidth="12" markerHeight="12" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect x="6" y="6" width="1168" height="418" rx="26" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- Cloud -->
+  <rect x="48" y="70" width="300" height="196" rx="20" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="72" y="106" font-size="21" font-weight="700" fill="#0f172a">Tu entorno cloud</text>
+  <text x="72" y="130" font-size="13.5" fill="#64748b">autorizado &#183; solo lectura</text>
+  <rect x="72" y="146" width="252" height="34" rx="11" fill="#ff9900"/>
+  <text x="92" y="169" font-size="15" font-weight="700" fill="#1a1a1a">AWS</text>
+  <rect x="72" y="186" width="252" height="34" rx="11" fill="#0078d4"/>
+  <text x="92" y="209" font-size="15" font-weight="700" fill="#ffffff">Azure</text>
+  <rect x="72" y="226" width="252" height="34" rx="11" fill="#34a853"/>
+  <text x="92" y="249" font-size="15" font-weight="700" fill="#ffffff">GCP</text>
+
+  <line x1="348" y1="168" x2="430" y2="168" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="389" y="158" font-size="12.5" fill="#64748b" text-anchor="middle">solo lectura</text>
+
+  <!-- STRIX anchor -->
+  <rect x="438" y="70" width="300" height="196" rx="20" fill="#0e7c86" stroke="#0b5c64" stroke-width="2"/>
+  <text x="588" y="150" font-size="27" font-weight="800" fill="#ffffff" text-anchor="middle">STRIX_CLOUD</text>
+  <text x="588" y="182" font-size="15" fill="#c3e7ea" text-anchor="middle">escaneo read-only</text>
+  <text x="588" y="207" font-size="13" fill="#93d2d7" text-anchor="middle" font-family="'SFMono-Regular', Consolas, monospace">describe &#183; get &#183; list</text>
+
+  <line x1="738" y1="168" x2="820" y2="168" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#ar)"/>
+
+  <!-- Findings -->
+  <rect x="828" y="70" width="304" height="196" rx="20" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="852" y="106" font-size="21" font-weight="700" fill="#0f172a">Hallazgos</text>
+  <text x="852" y="128" font-size="13.5" fill="#64748b">clasificados por severidad</text>
+  <rect x="852" y="146" width="18" height="18" rx="5" fill="#dc2626"/>
+  <text x="882" y="161" font-size="15" fill="#0f172a">Crítico</text>
+  <rect x="852" y="174" width="18" height="18" rx="5" fill="#ea580c"/>
+  <text x="882" y="189" font-size="15" fill="#0f172a">Alto</text>
+  <rect x="852" y="202" width="18" height="18" rx="5" fill="#d99e00"/>
+  <text x="882" y="217" font-size="15" fill="#0f172a">Medio</text>
+  <rect x="852" y="230" width="18" height="18" rx="5" fill="#16a34a"/>
+  <text x="882" y="245" font-size="15" fill="#0f172a">Bajo</text>
+
+  <line x1="980" y1="266" x2="980" y2="312" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#ar)"/>
+
+  <!-- Output -->
+  <rect x="438" y="320" width="694" height="74" rx="18" fill="#eef6f7" stroke="#cfe6e9" stroke-width="2"/>
+  <text x="470" y="364" font-size="17" font-weight="700" fill="#0b5c64">Informe portable</text>
+  <rect x="648" y="342" width="120" height="34" rx="11" fill="#0e7c86"/>
+  <text x="708" y="365" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle">JSON</text>
+  <rect x="784" y="342" width="120" height="34" rx="11" fill="#0e7c86"/>
+  <text x="844" y="365" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle">SARIF</text>
+</svg>
