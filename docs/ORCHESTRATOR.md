@@ -39,3 +39,24 @@ Secrets and Key Vault
 - The orchestrator can resolve secrets from Azure Key Vault or environment variables. Set the environment variable `AZURE_KEYVAULT_NAME` to enable Key Vault lookups.
 - In `agents.yaml` you may reference connector config values using the `secret:` prefix. Example: `subscription_id: "secret:subscription_id"`.
 - See the dedicated secrets guide: [docs/SECRETS.md](docs/SECRETS.md)
+
+Security checks (CSPM)
+----------------------
+
+The orchestrator can run read-only, provider-neutral security checks and
+aggregate them into a findings report.
+
+```bash
+# Run checks and emit reports; gate CI on HIGH-or-above failures.
+python agents/orchestrator.py examples/agents.yaml --run --security \
+  --report findings.json --sarif findings.sarif --fail-on HIGH
+```
+
+Flags:
+
+- `--security` — run `run_security_checks()` on each connector and print a summary.
+- `--report PATH` — write findings as JSON.
+- `--sarif PATH` — write SARIF 2.1.0 (e.g. for GitHub code scanning).
+- `--fail-on SEVERITY` — exit code 2 if any failure is at/above SEVERITY.
+
+See `docs/FINDINGS.md` for the control catalog and the per-provider mapping.

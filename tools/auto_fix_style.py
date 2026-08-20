@@ -14,7 +14,7 @@ def fix_file(path: Path) -> bool:
         return False
     # Remove trailing whitespace on each line
     changed = False
-    lines = [l.rstrip() for l in text.splitlines()]
+    lines = [line.rstrip() for line in text.splitlines()]
     new_text = "\n".join(lines) + "\n"
     if new_text != text:
         path.write_text(new_text, encoding="utf8")

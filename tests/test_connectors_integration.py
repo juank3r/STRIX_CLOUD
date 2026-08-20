@@ -49,8 +49,17 @@ def test_azure_connector_with_mocked_sdk(monkeypatch):
         def get(self, name):
             return FakeRG(name, "eastus")
 
-    fake_default_cred = lambda: None
-    fake_rm_client = lambda cred, sub: types.SimpleNamespace(resource_groups=types.SimpleNamespace(list=lambda: [types.SimpleNamespace(name="rg-a"), types.SimpleNamespace(name="rg-b")]), get=lambda n: types.SimpleNamespace(name=n, location="eastus"))
+    def fake_default_cred():
+        return None
+
+    def fake_rm_client(cred, sub):
+        groups = [types.SimpleNamespace(name="rg-a"), types.SimpleNamespace(name="rg-b")]
+        return types.SimpleNamespace(
+            resource_groups=types.SimpleNamespace(
+                list=lambda: groups,
+                get=lambda n: types.SimpleNamespace(name=n, location="eastus"),
+            )
+        )
 
     monkeypatch.setattr(azure_connector, "DefaultAzureCredential", fake_default_cred, raising=False)
     monkeypatch.setattr(azure_connector, "ResourceManagementClient", fake_rm_client, raising=False)

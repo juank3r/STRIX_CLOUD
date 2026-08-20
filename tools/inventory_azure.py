@@ -40,7 +40,10 @@ def main():
         print("Listing Azure Container Registries (ACR)")
         acrs = inventory_acr()
         for a in acrs:
-            print(f"- ACR: {a.get('name')} (resourceGroup={a.get('resourceGroup')}, loginServer={a.get('loginServer')})")
+            print(
+                f"- ACR: {a.get('name')} "
+                f"(resourceGroup={a.get('resourceGroup')}, loginServer={a.get('loginServer')})"
+            )
 
         print("\nListing AKS clusters")
         akses = inventory_aks()
@@ -52,7 +55,10 @@ def main():
         for c in acis:
             print(f"- ACI: {c.get('name')} (rg={c.get('resourceGroup')})")
 
-        print("\nNote: To list repositories/images inside an ACR, run:\n  az acr repository list --name <acrName> -o json")
+        print(
+            "\nNote: To list repositories/images inside an ACR, run:\n"
+            "  az acr repository list --name <acrName> -o json"
+        )
     except Exception as e:
         print("Error during inventory:", e)
 

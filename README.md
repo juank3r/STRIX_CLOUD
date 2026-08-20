@@ -48,8 +48,24 @@ python agents/python_agent/agent.py
 3. Abre un PR hacia `cloud-pentest` y referencia cualquier autorización/legal
    necesaria si introduces funcionalidades de prueba.
 
+## Motor de hallazgos (CSPM)
+
+Los conectores ejecutan checks de seguridad **read-only** y reportan hallazgos
+neutrales por proveedor (mismos controles en AWS, Azure y GCP). Ejemplo:
+
+```bash
+python agents/orchestrator.py examples/agents.yaml --run --security \
+  --report findings.json --sarif findings.sarif --fail-on HIGH
+```
+
+Ver `docs/FINDINGS.md` para el catálogo de controles y el mapeo por proveedor.
+
 ## Roadmap inmediato
 
-- Diseñar e implementar `CloudGateway` (spec).
-- Implementar loader de plugins y conector AWS esqueleto.
-- Configurar CI para tests y lint.
+- [x] Diseñar e implementar `CloudGateway` (spec).
+- [x] Implementar loader de plugins y conectores AWS/Azure/GCP.
+- [x] Motor de hallazgos (`Finding`/`Report`) con export JSON y SARIF.
+- [x] Catálogo de controles neutral + checks de storage en los 3 proveedores.
+- [x] Dominio de red: ingress sin restricción (SG/NSG/firewall) en los 3.
+- [ ] Ampliar controles (IAM permisivo, cómputo público, cifrado de discos).
+- [ ] Endurecer CI (lint verde) y publicar SARIF en code scanning.
