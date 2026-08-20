@@ -55,7 +55,7 @@ flowchart LR
 STRIX_CLOUD hoy es un **CSPM determinista** (auditoría de configuración cloud) y
 todavía no integra este toolkit ofensivo. El mapeo previsto es:
 
-- **Capa LLM (Fases 3-4):** LiteLLM o la **API de Claude** directa para el agente
+- **Capa LLM (Fases 3-4):** LiteLLM o una **API de LLM** directa para el agente
   analista/remediador.
 - **Toolkit ofensivo (Caido / Nuclei / Playwright):** aplica al pentesting de
   *aplicaciones*; en la variante cloud es material para módulos futuros, no para

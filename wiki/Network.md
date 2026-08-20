@@ -3,7 +3,7 @@
 Esta página explica el **flujo de red** de extremo a extremo y, sobre todo, la
 **frontera de confianza** más importante del diseño:
 
-> El LLM (Claude API) **nunca** tiene ruta de red al entorno auditado. Solo el
+> El LLM (una API externa) **nunca** tiene ruta de red al entorno auditado. Solo el
 > runner de STRIX_CLOUD habla con el objetivo, **en solo lectura**, y el LLM
 > únicamente recibe *findings saneados*. La remediación no se auto-aplica: pasa
 > por un Pull Request con revisión humana.
@@ -19,7 +19,7 @@ sequenceDiagram
   participant STRIX as STRIX_CLOUD (runner)
   participant Cloud as APIs cloud (OBJETIVO)
   participant San as Sanitizador / guardrails
-  participant LLM as Claude API (LLM)
+  participant LLM as API del LLM
   participant PR as GitHub (Pull Request)
   actor Rev as Revisor humano
 
@@ -65,7 +65,7 @@ sequenceDiagram
 | Origen                     | Destino                    | Protocolo | Sentido        | Datos                          |
 |----------------------------|----------------------------|-----------|----------------|--------------------------------|
 | STRIX_CLOUD (runner)       | APIs cloud del objetivo    | HTTPS 443 | solo lectura   | describe/get/list → evidencia  |
-| STRIX_CLOUD (runner)       | Claude API (LLM)           | HTTPS 443 | envío/recepción| findings **saneados**          |
+| STRIX_CLOUD (runner)       | API del LLM           | HTTPS 443 | envío/recepción| findings **saneados**          |
 | STRIX_CLOUD (runner)       | GitHub (PR)                | HTTPS 443 | escritura PR   | diff de remediación propuesto  |
 | Revisor humano             | Infraestructura objetivo   | vía CI/CD | escritura      | cambio aplicado tras aprobar   |
 
