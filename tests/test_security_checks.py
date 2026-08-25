@@ -381,3 +381,60 @@ def test_aws_exposure_correlates_public_instance(monkeypatch):
     assert 22 in exp["i-exposed"].evidence["open_admin_ports"]
     assert exp["i-nic"].evidence["public_ip"] == "9.9.9.9"
     assert "T1190" in exp["i-exposed"].mitre
+
+
+# --- IAM: admin principals (AWS) ----------------------------------------
+
+class _FakeIAM:
+    def get_account_authorization_details(self):
+        return {
+            "UserDetailList": [
+                {
+                    "UserName": "admin-user",
+                    "Arn": "arn:aws:iam::123:user/admin-user",
+                    "AttachedManagedPolicies": [
+                        {"PolicyName": "AdministratorAccess",
+                         "PolicyArn": "arn:aws:iam::aws:policy/AdministratorAccess"}
+                    ],
+                },
+                {
+                    "UserName": "scoped-user",
+                    "Arn": "arn:aws:iam::123:user/scoped-user",
+                    "AttachedManagedPolicies": [
+                        {"PolicyName": "ReadOnlyAccess",
+                         "PolicyArn": "arn:aws:iam::aws:policy/ReadOnlyAccess"}
+                    ],
+                    "UserPolicyList": [
+                        {"PolicyName": "s3read",
+                         "PolicyDocument": {"Statement": [
+                             {"Effect": "Allow", "Action": "s3:GetObject", "Resource": "*"}]}}
+                    ],
+                },
+            ],
+            "RoleDetailList": [
+                {
+                    "RoleName": "admin-role",
+                    "Arn": "arn:aws:iam::123:role/admin-role",
+                    "RolePolicyList": [
+                        {"PolicyName": "inline",
+                         "PolicyDocument": {"Statement": [
+                             {"Effect": "Allow", "Action": "*", "Resource": "*"}]}}
+                    ],
+                },
+                {"RoleName": "safe-role", "Arn": "arn:aws:iam::123:role/safe-role"},
+            ],
+        }
+
+
+def test_aws_iam_admin_principal(monkeypatch):
+    conn = aws_connector.Connector({"region": "us-east-1"})
+    monkeypatch.setattr(conn, "_s3_client", lambda: None)
+    monkeypatch.setattr(conn, "_ec2_client", lambda: None)
+    monkeypatch.setattr(conn, "_iam_client", lambda: _FakeIAM())
+    findings = conn.run_security_checks()
+    adm = {f.resource_id: f for f in findings if f.check_id == "IAM_ADMIN_PRINCIPAL"}
+    assert set(adm.keys()) == {"admin-user", "admin-role"}
+    assert adm["admin-user"].resource_type == "iam_user"
+    assert adm["admin-role"].resource_type == "iam_role"
+    assert adm["admin-user"].severity is Severity.HIGH
+    assert "T1078.004" in adm["admin-user"].mitre

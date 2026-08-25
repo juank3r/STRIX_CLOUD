@@ -7,6 +7,7 @@ Security checks operate on S3 buckets using describe/get APIs exclusively.
 """
 import json
 from typing import Any, Dict, List
+from urllib.parse import unquote
 
 from agents.checks import catalog, network
 from agents.cloud_gateway import CloudGateway, GatewayError
@@ -30,6 +31,7 @@ class Connector(CloudGateway):
         catalog.STORAGE_LOGGING.id,
         catalog.NETWORK_UNRESTRICTED_INGRESS.id,
         catalog.EXPOSURE_INSTANCE_ADMIN_PORT.id,
+        catalog.IAM_ADMIN_PRINCIPAL.id,
     )
 
     def __init__(self, config: Dict[str, Any]):
@@ -47,6 +49,11 @@ class Connector(CloudGateway):
         if not self.boto3:
             return None
         return self.boto3.client("ec2", region_name=self.config.get("region"))
+
+    def _iam_client(self):
+        if not self.boto3:
+            return None
+        return self.boto3.client("iam")  # IAM is a global service
 
     # -- CloudGateway core ----------------------------------------------
     def validate_permissions(self) -> bool:
@@ -104,11 +111,55 @@ class Connector(CloudGateway):
         else:
             audit.audit("connector.security.skipped", {"provider": "aws", "domain": "network"})
 
+        iam = self._iam_client()
+        if iam is not None:
+            audit.audit("connector.security.start", {"provider": "aws", "domain": "iam"})
+            findings.extend(self._iam_findings(iam))
+        else:
+            audit.audit("connector.security.skipped", {"provider": "aws", "domain": "iam"})
+
         audit.audit(
             "connector.security.done",
             {"provider": "aws", "findings": len(findings), "failures": sum(f.is_failure for f in findings)},
         )
         return findings
+
+    def _iam_findings(self, client) -> List[Finding]:
+        """Flag IAM users/roles with administrator-equivalent access."""
+        ctl = catalog.IAM_ADMIN_PRINCIPAL
+        out: List[Finding] = []
+        try:
+            resp = client.get_account_authorization_details()
+        except Exception as exc:
+            audit.audit("connector.iam.skipped", {"provider": "aws", "reason": str(exc)})
+            return out
+        for user in resp.get("UserDetailList", []):
+            if _entity_is_admin(user):
+                name = user.get("UserName", "unknown")
+                out.append(
+                    ctl.finding(
+                        "aws",
+                        name,
+                        "iam_user",
+                        status=STATUS_FAIL,
+                        evidence={"arn": user.get("Arn"), "why": _admin_reason(user)},
+                        verification=f"aws iam list-user-policies --user-name {name}",
+                    )
+                )
+        for role in resp.get("RoleDetailList", []):
+            if _entity_is_admin(role):
+                name = role.get("RoleName", "unknown")
+                out.append(
+                    ctl.finding(
+                        "aws",
+                        name,
+                        "iam_role",
+                        status=STATUS_FAIL,
+                        evidence={"arn": role.get("Arn"), "why": _admin_reason(role)},
+                        verification=f"aws iam list-role-policies --role-name {name}",
+                    )
+                )
+        return out
 
     def _open_admin_sgs(self, client) -> Dict[str, list]:
         """Map security-group id -> list of admin ports it opens to 0.0.0.0/0."""
@@ -355,6 +406,52 @@ def _public_ip_from_nics(inst: Dict[str, Any]):
         if ip:
             return ip
     return None
+
+
+_ADMIN_MANAGED_ARN = "arn:aws:iam::aws:policy/AdministratorAccess"
+
+
+def _as_list(value):
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+
+def _doc_is_admin(doc) -> bool:
+    """True if a policy document allows Action '*' on Resource '*'."""
+    if isinstance(doc, str):
+        try:
+            doc = json.loads(unquote(doc))
+        except Exception:
+            return False
+    if not isinstance(doc, dict):
+        return False
+    for st in _as_list(doc.get("Statement")):
+        if not isinstance(st, dict) or st.get("Effect") != "Allow":
+            continue
+        actions = [str(a) for a in _as_list(st.get("Action"))]
+        resources = [str(r) for r in _as_list(st.get("Resource"))]
+        if "*" in actions and "*" in resources:
+            return True
+    return False
+
+
+def _entity_is_admin(entity: Dict[str, Any]) -> bool:
+    for p in entity.get("AttachedManagedPolicies", []):
+        if p.get("PolicyArn") == _ADMIN_MANAGED_ARN:
+            return True
+    inline = list(entity.get("UserPolicyList", [])) + list(entity.get("RolePolicyList", []))
+    for pol in inline:
+        if _doc_is_admin(pol.get("PolicyDocument")):
+            return True
+    return False
+
+
+def _admin_reason(entity: Dict[str, Any]) -> str:
+    for p in entity.get("AttachedManagedPolicies", []):
+        if p.get("PolicyArn") == _ADMIN_MANAGED_ARN:
+            return "AdministratorAccess managed policy"
+    return "inline policy allows Action '*' on Resource '*'"
 
 
 def _policy_denies_insecure_transport(policy: Dict[str, Any]) -> bool:

@@ -201,6 +201,26 @@ EXPOSURE_INSTANCE_ADMIN_PORT = Control(
     mitre=["T1190", "T1133"],
 )
 
+IAM_ADMIN_PRINCIPAL = Control(
+    id="IAM_ADMIN_PRINCIPAL",
+    title="IAM principal effectively has administrator access",
+    severity=Severity.HIGH,
+    category="iam",
+    description=(
+        "An IAM user or role is granted administrator-equivalent access (Action "
+        "'*' on Resource '*', or the AdministratorAccess managed policy). Such "
+        "principals are prime targets and privilege-escalation pivots."
+    ),
+    remediation=(
+        "Apply least privilege: replace wildcard/admin policies with scoped "
+        "permissions and tightly restrict who can assume admin roles."
+    ),
+    references=[
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html",
+    ],
+    mitre=["T1078.004"],
+)
+
 
 # Registry of all controls, keyed by id.
 CONTROLS: Dict[str, Control] = {
@@ -213,6 +233,7 @@ CONTROLS: Dict[str, Control] = {
         STORAGE_LOGGING,
         NETWORK_UNRESTRICTED_INGRESS,
         EXPOSURE_INSTANCE_ADMIN_PORT,
+        IAM_ADMIN_PRINCIPAL,
     )
 }
 
