@@ -316,3 +316,68 @@ def test_gcp_network_ingress(monkeypatch):
     assert net["fw-web"].severity is Severity.HIGH
     assert net["fw-ok"].status == STATUS_PASS
     assert net["fw-egress"].status == STATUS_PASS  # egress is ignored
+
+
+# --- Exposure: AWS live public instances --------------------------------
+
+class _FakeEC2Exposure:
+    def describe_security_groups(self):
+        return {
+            "SecurityGroups": [
+                {
+                    "GroupId": "sg-open",
+                    "IpPermissions": [
+                        {
+                            "IpProtocol": "tcp",
+                            "FromPort": 22,
+                            "ToPort": 22,
+                            "IpRanges": [{"CidrIp": "0.0.0.0/0"}],
+                        }
+                    ],
+                },
+                {
+                    "GroupId": "sg-restricted",
+                    "IpPermissions": [
+                        {
+                            "IpProtocol": "tcp",
+                            "FromPort": 22,
+                            "ToPort": 22,
+                            "IpRanges": [{"CidrIp": "10.0.0.0/8"}],
+                        }
+                    ],
+                },
+            ]
+        }
+
+    def describe_instances(self):
+        return {
+            "Reservations": [
+                {
+                    "Instances": [
+                        {"InstanceId": "i-exposed", "PublicIpAddress": "1.2.3.4",
+                         "SecurityGroups": [{"GroupId": "sg-open"}]},
+                        {"InstanceId": "i-private",
+                         "SecurityGroups": [{"GroupId": "sg-open"}]},
+                        {"InstanceId": "i-safe", "PublicIpAddress": "5.6.7.8",
+                         "SecurityGroups": [{"GroupId": "sg-restricted"}]},
+                        {"InstanceId": "i-nic",
+                         "SecurityGroups": [{"GroupId": "sg-open"}],
+                         "NetworkInterfaces": [{"Association": {"PublicIp": "9.9.9.9"}}]},
+                    ]
+                }
+            ]
+        }
+
+
+def test_aws_exposure_correlates_public_instance(monkeypatch):
+    conn = aws_connector.Connector({"region": "us-east-1"})
+    monkeypatch.setattr(conn, "_s3_client", lambda: None)
+    monkeypatch.setattr(conn, "_ec2_client", lambda: _FakeEC2Exposure())
+    findings = conn.run_security_checks()
+    exp = {f.resource_id: f for f in findings if f.check_id == "EXPOSURE_INSTANCE_ADMIN_PORT"}
+    # Only public instances behind a world-open admin SG are flagged.
+    assert set(exp.keys()) == {"i-exposed", "i-nic"}
+    assert exp["i-exposed"].severity is Severity.CRITICAL
+    assert 22 in exp["i-exposed"].evidence["open_admin_ports"]
+    assert exp["i-nic"].evidence["public_ip"] == "9.9.9.9"
+    assert "T1190" in exp["i-exposed"].mitre

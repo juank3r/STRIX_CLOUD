@@ -29,6 +29,7 @@ class Connector(CloudGateway):
         catalog.STORAGE_VERSIONING.id,
         catalog.STORAGE_LOGGING.id,
         catalog.NETWORK_UNRESTRICTED_INGRESS.id,
+        catalog.EXPOSURE_INSTANCE_ADMIN_PORT.id,
     )
 
     def __init__(self, config: Dict[str, Any]):
@@ -98,6 +99,8 @@ class Connector(CloudGateway):
         if ec2 is not None:
             audit.audit("connector.security.start", {"provider": "aws", "domain": "network"})
             findings.extend(self._network_findings(ec2))
+            audit.audit("connector.security.start", {"provider": "aws", "domain": "exposure"})
+            findings.extend(self._exposure_findings(ec2))
         else:
             audit.audit("connector.security.skipped", {"provider": "aws", "domain": "network"})
 
@@ -106,6 +109,68 @@ class Connector(CloudGateway):
             {"provider": "aws", "findings": len(findings), "failures": sum(f.is_failure for f in findings)},
         )
         return findings
+
+    def _open_admin_sgs(self, client) -> Dict[str, list]:
+        """Map security-group id -> list of admin ports it opens to 0.0.0.0/0."""
+        out: Dict[str, list] = {}
+        resp = client.describe_security_groups()
+        for sg in resp.get("SecurityGroups", []):
+            sg_id = sg.get("GroupId") or sg.get("GroupName")
+            ports: list = []
+            for perm in sg.get("IpPermissions", []):
+                cidrs = [r.get("CidrIp") for r in perm.get("IpRanges", [])]
+                cidrs += [r.get("CidrIpv6") for r in perm.get("Ipv6Ranges", [])]
+                if not any(network.is_open_cidr(c) for c in cidrs):
+                    continue
+                proto = perm.get("IpProtocol")
+                from_port = perm.get("FromPort")
+                to_port = perm.get("ToPort")
+                if proto in ("-1", -1):
+                    ports.append("all")
+                    continue
+                lo = 0 if from_port is None else int(from_port)
+                hi = 65535 if to_port is None else int(to_port)
+                ports.extend(p for p in network.ADMIN_PORTS if lo <= p <= hi)
+            if ports and sg_id:
+                out[sg_id] = sorted(set(ports), key=str)
+        return out
+
+    def _exposure_findings(self, client) -> List[Finding]:
+        """Correlate live public instances with world-open admin ports."""
+        ctl = catalog.EXPOSURE_INSTANCE_ADMIN_PORT
+        out: List[Finding] = []
+        open_admin = self._open_admin_sgs(client)
+        if not open_admin:
+            return out
+        resp = client.describe_instances()
+        for reservation in resp.get("Reservations", []):
+            for inst in reservation.get("Instances", []):
+                iid = inst.get("InstanceId", "unknown")
+                public_ip = inst.get("PublicIpAddress") or _public_ip_from_nics(inst)
+                sg_ids = [g.get("GroupId") for g in inst.get("SecurityGroups", [])]
+                exposed = [s for s in sg_ids if s in open_admin]
+                if not (public_ip and exposed):
+                    continue
+                ports = sorted({p for s in exposed for p in open_admin[s]}, key=str)
+                out.append(
+                    ctl.finding(
+                        "aws",
+                        iid,
+                        "ec2_instance",
+                        status=STATUS_FAIL,
+                        evidence={
+                            "public_ip": public_ip,
+                            "security_groups": exposed,
+                            "open_admin_ports": ports,
+                        },
+                        severity=Severity.CRITICAL,
+                        verification=(
+                            f"aws ec2 describe-instances --instance-ids {iid} "
+                            "--query 'Reservations[].Instances[].[PublicIpAddress,SecurityGroups]'"
+                        ),
+                    )
+                )
+        return out
 
     def _network_findings(self, client) -> List[Finding]:
         ctl = catalog.NETWORK_UNRESTRICTED_INGRESS
@@ -276,6 +341,15 @@ class Connector(CloudGateway):
             evidence=evidence,
             severity=Severity.LOW,
         )
+
+
+def _public_ip_from_nics(inst: Dict[str, Any]):
+    """Extract a public IP from an instance's network interfaces, if any."""
+    for nic in inst.get("NetworkInterfaces", []):
+        ip = (nic.get("Association") or {}).get("PublicIp")
+        if ip:
+            return ip
+    return None
 
 
 def _policy_denies_insecure_transport(policy: Dict[str, Any]) -> bool:

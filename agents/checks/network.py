@@ -14,8 +14,10 @@ OPEN_CIDRS = {"0.0.0.0/0", "::/0"}
 # Non-CIDR source tokens some providers use for the public internet.
 OPEN_SOURCE_TOKENS = {"*", "internet", "any"} | {c.lower() for c in OPEN_CIDRS}
 
-# Administrative ports whose public exposure is treated as critical.
-ADMIN_PORTS = (22, 3389)
+# Administrative / sensitive-service ports whose public exposure is treated as
+# critical: remote admin (SSH/RDP/WinRM/VNC), databases and data stores, and the
+# unauthenticated Docker API.
+ADMIN_PORTS = (22, 3389, 5985, 5986, 5900, 1433, 3306, 5432, 6379, 9200, 27017, 2375, 2379)
 
 
 def is_open_cidr(value: Optional[str]) -> bool:

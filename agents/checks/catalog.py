@@ -180,6 +180,27 @@ NETWORK_UNRESTRICTED_INGRESS = Control(
     mitre=["T1190"],
 )
 
+EXPOSURE_INSTANCE_ADMIN_PORT = Control(
+    id="EXPOSURE_INSTANCE_ADMIN_PORT",
+    title="Live instance reachable from the internet on an administrative port",
+    severity=Severity.CRITICAL,
+    category="exposure",
+    description=(
+        "A running compute instance has a public IP and an attached firewall rule "
+        "that exposes an administrative/service port (SSH/RDP/WinRM/DB/…) to "
+        "0.0.0.0/0, making it directly reachable from the internet. Unlike an open "
+        "firewall rule alone, this correlates the rule with a live, public host."
+    ),
+    remediation=(
+        "Remove the 0.0.0.0/0 ingress on admin ports, place the instance behind a "
+        "bastion/VPN, and/or remove its public IP."
+    ),
+    references=[
+        "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules.html",
+    ],
+    mitre=["T1190", "T1133"],
+)
+
 
 # Registry of all controls, keyed by id.
 CONTROLS: Dict[str, Control] = {
@@ -191,6 +212,7 @@ CONTROLS: Dict[str, Control] = {
         STORAGE_VERSIONING,
         STORAGE_LOGGING,
         NETWORK_UNRESTRICTED_INGRESS,
+        EXPOSURE_INSTANCE_ADMIN_PORT,
     )
 }
 

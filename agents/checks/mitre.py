@@ -12,6 +12,7 @@ from typing import Dict, List, Tuple
 TECHNIQUES: Dict[str, Tuple[str, str]] = {
     "T1078.004": ("Valid Accounts: Cloud Accounts", "initial-access"),
     "T1190": ("Exploit Public-Facing Application", "initial-access"),
+    "T1133": ("External Remote Services", "initial-access"),
     "T1199": ("Trusted Relationship", "initial-access"),
     "T1098": ("Account Manipulation", "persistence"),
     "T1098.001": ("Additional Cloud Credentials", "persistence"),
