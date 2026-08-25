@@ -142,7 +142,12 @@ class Connector(CloudGateway):
         open_admin = self._open_admin_sgs(client)
         if not open_admin:
             return out
-        resp = client.describe_instances()
+        try:
+            resp = client.describe_instances()
+        except Exception as exc:
+            # e.g. AccessDenied on ec2:DescribeInstances — cannot correlate.
+            audit.audit("connector.exposure.skipped", {"provider": "aws", "reason": str(exc)})
+            return out
         for reservation in resp.get("Reservations", []):
             for inst in reservation.get("Instances", []):
                 iid = inst.get("InstanceId", "unknown")
