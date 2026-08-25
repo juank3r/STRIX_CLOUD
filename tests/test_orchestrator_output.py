@@ -27,3 +27,4 @@ def test_render_all_formats():
     assert "fingerprint" in _render(r, "csv")
     assert "# STRIX_CLOUD findings" in _render(r, "md")
     assert "2.1.0" in _render(r, "sarif")
+    assert "STRIX_CLOUD findings" in _render(r, "html")

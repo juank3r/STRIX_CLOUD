@@ -241,6 +241,12 @@ class Report:
             ])
         return buf.getvalue()
 
+    def to_html(self) -> str:
+        """Self-contained single-file HTML report (operator-facing)."""
+        from agents.report.html import render_html
+
+        return render_html(self)
+
     def to_sarif(self) -> Dict[str, Any]:
         """Export failures as a minimal SARIF 2.1.0 document."""
         fails = self.failures()
