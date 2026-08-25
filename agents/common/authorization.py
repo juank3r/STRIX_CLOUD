@@ -90,6 +90,11 @@ def authorize_target(
     if target_id is None:
         return False, "connector config has no target account id to authorize"
 
+    # A denylist marks explicitly out-of-scope targets (Rules of Engagement).
+    deny = scope.get("deny") or []
+    if str(target_id) in {str(d) for d in deny}:
+        return False, f"target '{target_id}' is explicitly out of scope (denylist)"
+
     if target_id in {str(a) for a in allow}:
         return True, "authorized"
     return False, f"target '{target_id}' is not in the authorization allowlist"
@@ -109,6 +114,8 @@ def require_authorization(
         "provider": provider,
         "target": target_id,
         "authorized_by": scope.get("authorized_by"),
+        "operator": scope.get("operator"),
+        "engagement": scope.get("engagement"),
         "reason": reason,
     }
     if allowed:

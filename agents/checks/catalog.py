@@ -29,6 +29,8 @@ class Control:
     description: str
     remediation: str
     references: List[str] = field(default_factory=list)
+    #: ATT&CK technique ids this control maps to (see ``agents.checks.mitre``).
+    mitre: List[str] = field(default_factory=list)
 
     def finding(
         self,
@@ -39,12 +41,15 @@ class Control:
         evidence: Optional[Dict[str, Any]] = None,
         severity: Optional[Severity] = None,
         remediation: Optional[str] = None,
+        account_id: str = "",
+        region: str = "",
+        verification: str = "",
     ) -> Finding:
         """Build a :class:`Finding` for this control against one resource.
 
         ``severity`` / ``remediation`` may be overridden per provider when the
-        residual risk differs (e.g. platform-managed encryption makes a missing
-        customer-managed key lower risk than an unencrypted bucket).
+        residual risk differs. ``account_id`` / ``region`` / ``verification``
+        carry the red-team enrichment (Phase A).
         """
         return Finding(
             check_id=self.id,
@@ -58,6 +63,10 @@ class Control:
             remediation=remediation if remediation is not None else self.remediation,
             references=list(self.references),
             evidence=evidence or {},
+            account_id=account_id,
+            region=region,
+            mitre=list(self.mitre),
+            verification=verification,
         )
 
 
@@ -81,6 +90,7 @@ STORAGE_PUBLIC_ACCESS = Control(
         "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html",
         "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent",
     ],
+    mitre=["T1530"],
 )
 
 STORAGE_SECURE_TRANSPORT = Control(
@@ -143,6 +153,7 @@ STORAGE_LOGGING = Control(
     ),
     remediation="Enable server access logging / audit logs to a protected sink.",
     references=[],
+    mitre=["T1562.008"],
 )
 
 NETWORK_UNRESTRICTED_INGRESS = Control(
@@ -166,6 +177,7 @@ NETWORK_UNRESTRICTED_INGRESS = Control(
         "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview",
         "https://cloud.google.com/vpc/docs/firewalls",
     ],
+    mitre=["T1190"],
 )
 
 
