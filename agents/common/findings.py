@@ -205,6 +205,22 @@ class Report:
         parts = ", ".join(f"{k}={v}" for k, v in sorted(summary["by_severity"].items()))
         lines.append(f"**{summary['failures']} failures** ({parts or 'none'}) of {summary['total']} checks.")
         lines.append("")
+
+        from agents.report import narrative
+
+        start = narrative.start_here(self)
+        if start:
+            lines.append("## Start here")
+            for i, item in enumerate(start, 1):
+                lines.append(f"{i}. **[{item['severity']}]** {item['title']}")
+                for step in item.get("steps", []):
+                    lines.append(f"   - {step}")
+                if item.get("verification"):
+                    lines.append(f"   - Verify: `{item['verification']}`")
+            lines.append("")
+            lines.append("## All findings")
+            lines.append("")
+
         for f in sorted(items, key=lambda x: (-int(x.severity), x.check_id)):
             mitre = f", ATT&CK {', '.join(f.mitre)}" if f.mitre else ""
             lines.append(f"## [{f.severity.name}] {f.title}{mitre}")
@@ -246,6 +262,12 @@ class Report:
         from agents.report.html import render_html
 
         return render_html(self)
+
+    def to_targets(self) -> str:
+        """Flat, greppable target list (public hosts, buckets, admin principals)."""
+        from agents.report import narrative
+
+        return narrative.targets_text(self)
 
     def to_sarif(self) -> Dict[str, Any]:
         """Export failures as a minimal SARIF 2.1.0 document."""

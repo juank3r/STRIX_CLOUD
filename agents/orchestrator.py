@@ -157,11 +157,17 @@ def _render(report: Report, fmt: str) -> str:
         return report.to_markdown()
     if fmt == "html":
         return report.to_html()
+    if fmt == "targets":
+        return report.to_targets()
     raise ValueError(f"Unknown format: {fmt}")
 
 
 def _write_reports(
-    report: Report, report_path: str = None, sarif_path: str = None, html_path: str = None
+    report: Report,
+    report_path: str = None,
+    sarif_path: str = None,
+    html_path: str = None,
+    targets_path: str = None,
 ) -> None:
     if report_path:
         with open(report_path, "w", encoding="utf-8") as f:
@@ -175,6 +181,10 @@ def _write_reports(
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(report.to_html())
         print(f"Wrote HTML report to {html_path}")
+    if targets_path:
+        with open(targets_path, "w", encoding="utf-8") as f:
+            f.write(report.to_targets())
+        print(f"Wrote target list to {targets_path}")
 
 
 def _print_summary(report: Report) -> None:
@@ -194,13 +204,16 @@ def main(argv=None):
     parser.add_argument("--operator", metavar="NAME", help="Operator identity, recorded in the audit trail")
     parser.add_argument("--security", action="store_true", help="Run read-only security (CSPM) checks")
     parser.add_argument(
-        "--format", choices=["json", "md", "csv", "sarif", "html"], help="Print report to stdout"
+        "--format",
+        choices=["json", "md", "csv", "sarif", "html", "targets"],
+        help="Print report to stdout",
     )
     parser.add_argument("--provider", choices=["aws", "azure", "gcp"], help="Filter findings by provider")
     parser.add_argument("--min-severity", metavar="SEVERITY", help="Only include findings at/above this severity")
     parser.add_argument("--report", metavar="PATH", help="Write findings JSON to PATH")
     parser.add_argument("--sarif", metavar="PATH", help="Write SARIF 2.1.0 to PATH")
     parser.add_argument("--html", metavar="PATH", help="Write a self-contained HTML report to PATH")
+    parser.add_argument("--targets", metavar="PATH", help="Write a flat target list (hosts/buckets/admins) to PATH")
     parser.add_argument(
         "--fail-on",
         metavar="SEVERITY",
@@ -214,7 +227,7 @@ def main(argv=None):
     run_security = (
         args.security
         or args.format is not None
-        or bool(args.report or args.sarif or args.html)
+        or bool(args.report or args.sarif or args.html or args.targets)
         or bool(args.fail_on)
     )
 
@@ -236,10 +249,16 @@ def main(argv=None):
 
     if args.format:
         print(_render(report, args.format))
-    elif run_security and not (args.report or args.sarif or args.html):
+    elif run_security and not (args.report or args.sarif or args.html or args.targets):
         _print_summary(report)
 
-    _write_reports(report, report_path=args.report, sarif_path=args.sarif, html_path=args.html)
+    _write_reports(
+        report,
+        report_path=args.report,
+        sarif_path=args.sarif,
+        html_path=args.html,
+        targets_path=args.targets,
+    )
 
     if args.fail_on:
         threshold = Severity.from_name(args.fail_on)

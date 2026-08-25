@@ -40,3 +40,23 @@ def test_html_escapes_malicious_resource_name():
 def test_html_empty_report():
     html = render_html(Report())
     assert "No failing findings" in html
+
+
+def test_html_has_start_here_for_chain():
+    r = Report(run_id="r")
+    r.add(
+        Finding(
+            "EXPOSURE_INSTANCE_ADMIN_PORT", "Exposed", "aws", "i-1", "ec2_instance",
+            Severity.CRITICAL, STATUS_FAIL, account_id="123",
+            evidence={"public_ip": "1.2.3.4", "open_admin_ports": [22]},
+        )
+    )
+    r.add(
+        Finding(
+            "IAM_ADMIN_PRINCIPAL", "Admin", "aws", "admin-role", "iam_role",
+            Severity.HIGH, STATUS_FAIL, account_id="123",
+        )
+    )
+    html = render_html(r)
+    assert "Start here" in html
+    assert "admin identity" in html

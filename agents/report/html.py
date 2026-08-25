@@ -17,6 +17,7 @@ import json
 from typing import List
 
 from agents.common.findings import Finding, Report
+from agents.report import narrative
 
 _STYLE = """
 :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c232c;--ink:#e6edf3;--muted:#9aa7b4;
@@ -34,6 +35,11 @@ h1{font-size:1.5rem;margin:0 0 2px;letter-spacing:-.01em}
 .pill.med{background:var(--med)}.pill.low{background:var(--low)}
 .pill.info{background:var(--info);color:#fff}
 .pill.total{background:var(--panel2);color:var(--ink);border:1px solid var(--border)}
+.starthere{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:12px 18px;margin:8px 0}
+.starthere h2{margin:0 0 8px;font-size:1rem;color:var(--accent)}
+.starthere ol{margin:0;padding-left:20px}.starthere li{margin:7px 0}
+.starthere .s{color:var(--muted);font-size:.85rem;margin:2px 0}
+.starthere code{background:#0b0f14;border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-size:.78rem}
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 22px;
 position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--border);z-index:5}
 .controls input,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--border);
@@ -138,6 +144,21 @@ def _finding_html(f: Finding) -> str:
     return "".join(parts)
 
 
+def _start_here_html(report: Report) -> str:
+    items = narrative.start_here(report)
+    if not items:
+        return ""
+    lis = []
+    for it in items:
+        head = ('<span class="chip ' + _esc(it["severity"]) + '">' + _esc(it["severity"])
+                + "</span>" + _esc(it["title"]))
+        sub = "".join('<div class="s">• ' + _esc(step) + "</div>" for step in it.get("steps", []))
+        if it.get("verification"):
+            sub += '<div class="s">verify: <code>' + _esc(it["verification"]) + "</code></div>"
+        lis.append("<li>" + head + sub + "</li>")
+    return '<section class="starthere"><h2>Start here</h2><ol>' + "".join(lis) + "</ol></section>"
+
+
 def render_html(report: Report) -> str:
     items: List[Finding] = [f for f in report.findings if f.is_failure or f.status == "error"]
     items.sort(key=lambda f: (-int(f.severity), f.check_id, f.resource_id))
@@ -172,7 +193,8 @@ def render_html(report: Report) -> str:
         "<title>STRIX_CLOUD report</title><style>" + _STYLE + "</style></head><body><div class=\"wrap\">"
         "<h1>STRIX_CLOUD findings</h1><div class=\"meta\">" + meta + "</div>"
         '<div class="pills">' + "".join(pills) + "</div>"
-        '<div class="controls">'
+        + _start_here_html(report)
+        + '<div class="controls">'
         '<input id="q" placeholder="search resource, check, ATT&amp;CK…">'
         '<select id="prov"><option value="all">all providers</option>'
         '<option value="aws">aws</option><option value="azure">azure</option>'
